@@ -255,12 +255,12 @@ export default function Home() {
     const fullTurns = (5 + Math.floor(Math.random() * 3)) * 360;
 
     setIsSpinning(true);
-    setLatestWinner(winner);
     setRotation((current) => current + fullTurns + delta);
     setHistory(nextHistory);
     setRemaining(nextRemaining);
 
     window.setTimeout(() => {
+      setLatestWinner(winner);
       setIsSpinning(false);
     }, 2400);
   };
@@ -403,7 +403,7 @@ export default function Home() {
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <p className="text-sm uppercase tracking-wide opacity-70">Next TV choice</p>
                 <p className="mt-2 text-3xl font-bold">
-                  {latestWinner ?? "Press spin"}
+                  {isSpinning ? "Spinning..." : latestWinner ?? "Press spin"}
                 </p>
                 <p className="mt-2 text-sm opacity-75">
                   Remaining this round: {remaining.length === 0 ? names.length : remaining.length}
