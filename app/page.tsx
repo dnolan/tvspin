@@ -108,11 +108,11 @@ export default function Home() {
 
         const parsedHistory = Array.isArray(persisted?.history)
           ? persisted.history.filter(
-              (entry): entry is SpinResult =>
-                typeof entry?.name === "string" &&
-                typeof entry?.spunAt === "string" &&
-                typeof entry?.round === "number",
-            )
+            (entry): entry is SpinResult =>
+              typeof entry?.name === "string" &&
+              typeof entry?.spunAt === "string" &&
+              typeof entry?.round === "number",
+          )
           : [];
 
         const parsedRemaining = Array.isArray(persisted?.remaining)
@@ -401,7 +401,7 @@ export default function Home() {
 
             <div className="space-y-6">
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                <p className="text-sm uppercase tracking-wide opacity-70">Next TV choice</p>
+                <p className="text-sm uppercase tracking-wide opacity-70">Current TV Chooser</p>
                 <p className="mt-2 text-3xl font-bold">
                   {isSpinning ? "Spinning..." : latestWinner ?? "Press spin"}
                 </p>
@@ -415,20 +415,6 @@ export default function Home() {
                 ) : null}
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                <p className="text-sm uppercase tracking-wide opacity-70">Equal allotment tracker</p>
-                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {names.map((name) => (
-                    <li
-                      key={name}
-                      className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2"
-                    >
-                      <span>{name}</span>
-                      <span className="text-sm opacity-80">{nameToCount.get(name) ?? 0} picks</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
 
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <p className="text-sm uppercase tracking-wide opacity-70">Spin history</p>
@@ -446,6 +432,21 @@ export default function Home() {
                     ))}
                   </ul>
                 )}
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm uppercase tracking-wide opacity-70">Equal allotment tracker</p>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {names.map((name) => (
+                    <li
+                      key={name}
+                      className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2"
+                    >
+                      <span>{name}</span>
+                      <span className="text-sm opacity-80">{nameToCount.get(name) ?? 0} picks</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </section>
