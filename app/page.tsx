@@ -82,6 +82,11 @@ export default function Home() {
     return countMap;
   }, [history, names]);
 
+  const hasSpunToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return history.some((entry) => new Date(entry.spunAt).toDateString() === today);
+  }, [history]);
+
   useEffect(() => {
     if (!spinDocRef) {
       setHistory([]);
@@ -187,6 +192,16 @@ export default function Home() {
       return;
     }
 
+    if (hasSpunToday) {
+      const shouldContinue = window.confirm(
+        "A spin has already been recorded today. Do you want to continue?",
+      );
+
+      if (!shouldContinue) {
+        return;
+      }
+    }
+
     const currentPool = remaining.length > 0 ? remaining : [...names];
     const randomIndex = Math.floor(Math.random() * currentPool.length);
     const winner = currentPool[randomIndex];
@@ -224,10 +239,38 @@ export default function Home() {
   };
 
   const resetHistory = () => {
+    const shouldReset = window.confirm(
+      "This will clear all spin history and restart everything. Continue?",
+    );
+
+    if (!shouldReset) {
+      return;
+    }
+
     setHistory([]);
     setRemaining([...names]);
     setLatestWinner(null);
-    setRotation(0);
+    setIsSpinning(false);
+  };
+
+  const resetCurrentRound = () => {
+    const shouldResetRound = window.confirm(
+      "This will reset only the current round pool. History will be kept. Continue?",
+    );
+
+    if (!shouldResetRound) {
+      return;
+    }
+
+    const currentRound = history.length > 0 ? history[history.length - 1].round : null;
+    const nextHistory =
+      currentRound === null
+        ? history
+        : history.filter((entry) => entry.round !== currentRound);
+
+    setHistory(nextHistory);
+    setRemaining([...names]);
+    setLatestWinner(nextHistory.length > 0 ? nextHistory[nextHistory.length - 1].name : null);
     setIsSpinning(false);
   };
 
@@ -289,6 +332,14 @@ export default function Home() {
                 className="rounded-full border border-white/20 px-6 py-2 text-sm font-semibold"
               >
                 Reset History
+              </button>
+
+              <button
+                type="button"
+                onClick={resetCurrentRound}
+                className="rounded-full border border-white/20 px-6 py-2 text-sm font-semibold"
+              >
+                Reset Current Round
               </button>
             </div>
 
