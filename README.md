@@ -28,6 +28,11 @@ NEXT_PUBLIC_TV_SPIN_DOC_ID=default
 
 `NEXT_PUBLIC_TV_SPIN_DOC_ID` is optional and defaults to `default`.
 
+In Firebase Console, enable authentication:
+
+1. Go to `Authentication` -> `Sign-in method`
+2. Enable `Google` provider
+
 ## Run locally
 
 ```bash
@@ -42,6 +47,6 @@ Open http://localhost:3000
 - Names are picked randomly from a **remaining pool**.
 - Once a person is picked, they are removed from the remaining pool.
 - When all names have been picked, the pool resets and a new round starts.
-- Spin history and remaining pool are persisted to Firebase Firestore (`tvspin/{docId}`).
+- Spin history and remaining pool are persisted to Firebase Firestore per signed-in user at `users/{uid}/tvspin/{docId}`.
 
 This guarantees each name is selected exactly once per round before any repeats.

@@ -1,4 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
+import { Auth, GoogleAuthProvider, getAuth } from "firebase/auth";
 import { Firestore, getFirestore } from "firebase/firestore";
 
 const rawFirebaseConfig = {
@@ -13,11 +14,15 @@ const rawFirebaseConfig = {
 export const hasFirebaseConfig = Object.values(rawFirebaseConfig).every(Boolean);
 
 let db: Firestore | null = null;
+let auth: Auth | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
 
 if (hasFirebaseConfig) {
   const firebaseConfig = rawFirebaseConfig as Record<string, string>;
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   db = getFirestore(app);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
 }
 
-export { db };
+export { auth, db, googleProvider };

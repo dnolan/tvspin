@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, hasFirebaseConfig } from "@/lib/firebase";
+import { auth, db, googleProvider, hasFirebaseConfig } from "@/lib/firebase";
 
 type SpinResult = {
   name: string;
@@ -51,17 +52,21 @@ function getPalette(count: number): string[] {
 
 export default function Home() {
   const firestoreDocId = process.env.NEXT_PUBLIC_TV_SPIN_DOC_ID || "default";
-  const spinDocRef = useMemo(() => {
-    if (!db) {
-      return null;
-    }
-
-    return doc(db, "tvspin", firestoreDocId);
-  }, [firestoreDocId]);
   const names = useMemo(
     () => parseNames(process.env.NEXT_PUBLIC_TV_NAMES),
     [],
   );
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(!hasFirebaseConfig || !auth);
+  const [isAuthBusy, setIsAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const spinDocRef = useMemo(() => {
+    if (!db || !authUser) {
+      return null;
+    }
+
+    return doc(db, "users", authUser.uid, "tvspin", firestoreDocId);
+  }, [authUser, firestoreDocId]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [remaining, setRemaining] = useState<string[]>([]);
   const [history, setHistory] = useState<SpinResult[]>([]);
@@ -90,6 +95,42 @@ export default function Home() {
   }, [history]);
 
   useEffect(() => {
+    if (!hasFirebaseConfig) {
+      setAuthReady(true);
+      return;
+    }
+
+    if (!auth) {
+      setAuthError("Firebase auth could not initialize.");
+      setAuthReady(true);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setAuthReady(true);
+      if (user) {
+        setAuthError(null);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+
+    if (!authUser) {
+      setHistory([]);
+      setRemaining([...names]);
+      setLatestWinner(null);
+      setSaveState("idle");
+      setIsLoaded(true);
+      return;
+    }
+
     if (!spinDocRef) {
       setHistory([]);
       setRemaining([...names]);
@@ -139,10 +180,10 @@ export default function Home() {
     };
 
     void loadState();
-  }, [names, spinDocRef]);
+  }, [authReady, authUser, names, spinDocRef]);
 
   useEffect(() => {
-    if (!isLoaded || !spinDocRef) {
+    if (!isLoaded || !spinDocRef || !authUser) {
       return;
     }
 
@@ -169,7 +210,39 @@ export default function Home() {
     };
 
     void persistState();
-  }, [history, isLoaded, remaining, spinDocRef]);
+  }, [authUser, history, isLoaded, remaining, spinDocRef]);
+
+  const signIn = async () => {
+    if (!auth || !googleProvider) {
+      setAuthError("Firebase auth is not available.");
+      return;
+    }
+
+    try {
+      setIsAuthBusy(true);
+      setAuthError(null);
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      setAuthError(`Sign-in failed. ${getErrorMessage(error)}`);
+    } finally {
+      setIsAuthBusy(false);
+    }
+  };
+
+  const signOutUser = async () => {
+    if (!auth) {
+      return;
+    }
+
+    try {
+      setIsAuthBusy(true);
+      await signOut(auth);
+    } catch (error) {
+      setAuthError(`Sign-out failed. ${getErrorMessage(error)}`);
+    } finally {
+      setIsAuthBusy(false);
+    }
+  };
 
   const segmentAngle = names.length > 0 ? 360 / names.length : 360;
   const colors = useMemo(() => getPalette(names.length), [names.length]);
@@ -216,6 +289,11 @@ export default function Home() {
 
   const spin = () => {
     if (isSpinning || names.length === 0) {
+      return;
+    }
+
+    if (!authUser) {
+      setAuthError("Sign in to spin and save results.");
       return;
     }
 
@@ -322,6 +400,14 @@ export default function Home() {
             </section>
           ) : null}
 
+         
+
+          {authError ? (
+            <section className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm">
+              {authError}
+            </section>
+          ) : null}
+
           {firebaseError ? (
             <section className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm">
               {firebaseError}
@@ -376,7 +462,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={spin}
-                disabled={isSpinning}
+                disabled={isSpinning || !authUser || !authReady}
                 className="rounded-full bg-foreground px-8 py-3 font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSpinning ? "Spinning..." : "Spin"}
@@ -385,6 +471,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={resetHistory}
+                disabled={!authUser}
                 className="rounded-full border border-white/20 px-6 py-2 text-sm font-semibold"
               >
                 Reset History
@@ -393,6 +480,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={resetCurrentRound}
+                disabled={!authUser}
                 className="rounded-full border border-white/20 px-6 py-2 text-sm font-semibold"
               >
                 Reset Current Round
@@ -448,6 +536,40 @@ export default function Home() {
                   ))}
                 </ul>
               </div>
+
+               {hasFirebaseConfig ? (
+            <section className="w-full rounded-xl border border-white/15 bg-black/20 p-4">
+              {!authReady ? (
+                <p className="text-sm opacity-80">Checking sign-in status...</p>
+              ) : authUser ? (
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                  <p className="text-sm">
+                    Signed in as <span className="font-semibold">{authUser.email ?? authUser.displayName ?? "Firebase user"}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={signOutUser}
+                    disabled={isAuthBusy}
+                    className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isAuthBusy ? "Working..." : "Sign Out"}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                  <p className="text-sm opacity-80">Sign in with Google to spin and sync your own history.</p>
+                  <button
+                    type="button"
+                    onClick={signIn}
+                    disabled={isAuthBusy}
+                    className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isAuthBusy ? "Signing in..." : "Sign In"}
+                  </button>
+                </div>
+              )}
+            </section>
+          ) : null}
             </div>
           </section>
         </>
