@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase";
 import { AllotmentTracker } from "@/app/components/AllotmentTracker";
+import { AuthHeader } from "@/app/components/AuthHeader";
 import { SpinHistory } from "@/app/components/SpinHistory";
 import { SpinWheel } from "@/app/components/SpinWheel";
 import { useSpinState } from "@/app/hooks/useSpinState";
@@ -69,7 +70,17 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center gap-8 px-6 py-10">
-      <h1 className="text-center text-3xl font-bold tracking-tight">TV Spin Picker</h1>
+      {hasFirebaseConfig ? (
+        <AuthHeader
+          authReady={authReady}
+          authUser={authUser}
+          isAuthBusy={isAuthBusy}
+          onSignIn={signIn}
+          onSignOut={signOutUser}
+        />
+      ) : (
+        <h1 className="text-center text-3xl font-bold tracking-tight">TV Spin Picker</h1>
+      )}
 
       {names.length === 0 ? (
         <section className="w-full max-w-2xl rounded-xl border border-white/10 bg-black/20 p-6 text-center">
@@ -216,45 +227,6 @@ export default function Home() {
                   <AllotmentTracker names={names} nameToCount={nameToCount} />
                 </>
               )}
-
-              {hasFirebaseConfig ? (
-                <section className="w-full rounded-xl border border-white/15 bg-black/20 p-4">
-                  {!authReady ? (
-                    <p className="text-sm opacity-80">Checking sign-in status...</p>
-                  ) : authUser ? (
-                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-                      <p className="text-sm">
-                        Signed in as{" "}
-                        <span className="font-semibold">
-                          {authUser.email ?? authUser.displayName ?? "Firebase user"}
-                        </span>
-                      </p>
-                      <button
-                        type="button"
-                        onClick={signOutUser}
-                        disabled={isAuthBusy}
-                        className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isAuthBusy ? "Working..." : "Sign Out"}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-                      <p className="text-sm opacity-80">
-                        Sign in with Google to spin and sync your own history.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={signIn}
-                        disabled={isAuthBusy}
-                        className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isAuthBusy ? "Signing in..." : "Sign In"}
-                      </button>
-                    </div>
-                  )}
-                </section>
-              ) : null}
             </div>
           </section>
         </>
