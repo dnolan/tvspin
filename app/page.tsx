@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider, hasFirebaseConfig } from "@/lib/firebase";
@@ -75,6 +75,7 @@ export default function Home() {
   const [latestWinner, setLatestWinner] = useState<string | null>(null);
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const hasUserMutated = useRef(false);
 
   const nameToCount = useMemo(() => {
     const countMap = new Map<string, number>();
@@ -183,7 +184,7 @@ export default function Home() {
   }, [authReady, authUser, names, spinDocRef]);
 
   useEffect(() => {
-    if (!isLoaded || !spinDocRef || !authUser) {
+    if (!isLoaded || !spinDocRef || !authUser || !hasUserMutated.current) {
       return;
     }
 
@@ -332,6 +333,7 @@ export default function Home() {
     const delta = (desiredModulo - currentModulo + 360) % 360;
     const fullTurns = (5 + Math.floor(Math.random() * 3)) * 360;
 
+    hasUserMutated.current = true;
     setIsSpinning(true);
     setRotation((current) => current + fullTurns + delta);
     setHistory(nextHistory);
@@ -352,6 +354,7 @@ export default function Home() {
       return;
     }
 
+    hasUserMutated.current = true;
     setHistory([]);
     setRemaining([...names]);
     setLatestWinner(null);
@@ -373,6 +376,7 @@ export default function Home() {
         ? history
         : history.filter((entry) => entry.round !== currentRound);
 
+    hasUserMutated.current = true;
     setHistory(nextHistory);
     setRemaining([...names]);
     setLatestWinner(nextHistory.length > 0 ? nextHistory[nextHistory.length - 1].name : null);
