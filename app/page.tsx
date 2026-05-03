@@ -162,6 +162,10 @@ export default function Home() {
                 Reset Current Round
               </button>
 
+              {!authUser && authReady ? (
+                <p className="text-center text-xs opacity-50">Sign in to use reset buttons</p>
+              ) : null}
+
               {pendingReset ? (
                 <div className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-sm">
                   <p className="mb-3">
