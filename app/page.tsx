@@ -22,6 +22,7 @@ function parseNames(raw: string | undefined): string[] {
 export default function Home() {
   const names = useMemo(() => parseNames(process.env.NEXT_PUBLIC_TV_NAMES), []);
   const [pendingSpinConfirm, setPendingSpinConfirm] = useState(false);
+  const [pendingReset, setPendingReset] = useState<"history" | "round" | null>(null);
 
   const {
     authUser,
@@ -54,18 +55,13 @@ export default function Home() {
     spin(true);
   };
 
-  const handleResetHistory = () => {
-    const shouldReset = window.confirm(
-      "This will clear all spin history and restart everything. Continue?",
-    );
-    if (shouldReset) resetHistory();
-  };
+  const handleResetHistory = () => setPendingReset("history");
+  const handleResetCurrentRound = () => setPendingReset("round");
 
-  const handleResetCurrentRound = () => {
-    const shouldReset = window.confirm(
-      "This will reset only the current round pool. History will be kept. Continue?",
-    );
-    if (shouldReset) resetCurrentRound();
+  const confirmReset = () => {
+    if (pendingReset === "history") resetHistory();
+    else if (pendingReset === "round") resetCurrentRound();
+    setPendingReset(null);
   };
 
   return (
@@ -165,6 +161,32 @@ export default function Home() {
               >
                 Reset Current Round
               </button>
+
+              {pendingReset ? (
+                <div className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-sm">
+                  <p className="mb-3">
+                    {pendingReset === "history"
+                      ? "Clear all spin history and restart?"
+                      : "Reset current round pool? History will be kept."}
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={confirmReset}
+                      className="rounded-full bg-red-500 px-5 py-2 text-sm font-semibold text-white"
+                    >
+                      Yes, reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingReset(null)}
+                      className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-6">
