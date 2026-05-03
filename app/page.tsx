@@ -128,7 +128,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleSpin}
-                  disabled={isSpinning || !authUser || !authReady}
+                  disabled={isSpinning || !authUser || !authReady || !isLoaded}
                   className="rounded-full bg-foreground px-8 py-3 font-semibold text-background disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSpinning ? "Spinning..." : "Spin"}
@@ -159,9 +159,13 @@ export default function Home() {
             <div className="space-y-6">
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <p className="text-sm uppercase tracking-wide opacity-70">Current TV Chooser</p>
-                <p className="mt-2 text-3xl font-bold">
-                  {isSpinning ? "Spinning..." : latestWinner ?? "Press spin"}
-                </p>
+                {authUser && !isLoaded ? (
+                  <div className="mt-2 h-9 w-40 animate-pulse rounded-lg bg-white/5" />
+                ) : (
+                  <p className="mt-2 text-3xl font-bold">
+                    {isSpinning ? "Spinning..." : latestWinner ?? "Press spin"}
+                  </p>
+                )}
                 <p className="mt-2 text-sm opacity-75">
                   Remaining this round: {remaining.length === 0 ? names.length : remaining.length}
                 </p>
@@ -179,9 +183,39 @@ export default function Home() {
                 ) : null}
               </div>
 
-              <SpinHistory history={history} />
-
-              <AllotmentTracker names={names} nameToCount={nameToCount} />
+              {authUser && !isLoaded ? (
+                <>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-sm uppercase tracking-wide opacity-70">Spin history</p>
+                    <div className="mt-3 space-y-2">
+                      {[1, 2, 3].map((n) => (
+                        <div
+                          key={n}
+                          className="h-9 animate-pulse rounded-lg border border-white/10 bg-white/5"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-sm uppercase tracking-wide opacity-70">
+                      Equal allotment tracker
+                    </p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {names.map((name) => (
+                        <div
+                          key={name}
+                          className="h-10 animate-pulse rounded-lg border border-white/10 bg-white/5"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <SpinHistory history={history} />
+                  <AllotmentTracker names={names} nameToCount={nameToCount} />
+                </>
+              )}
 
               {hasFirebaseConfig ? (
                 <section className="w-full rounded-xl border border-white/15 bg-black/20 p-4">
