@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { version } from "@/package.json";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+
       </body>
+      <footer className="text-center text-xs text-gray-400 py-4">
+        v{version} &mdash; built {new Date().toLocaleDateString("en-GB", { dateStyle: "medium" })}
+      </footer>
     </html>
   );
 }
