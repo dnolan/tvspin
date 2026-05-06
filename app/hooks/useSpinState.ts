@@ -212,9 +212,14 @@ export function useSpinState(names: string[]) {
     }
     if (hasSpunToday && !confirmedToday) return;
 
-    const currentPool = remaining.length > 0 ? remaining : [...names];
-    const randomIndex = Math.floor(Math.random() * currentPool.length);
-    const winner = currentPool[randomIndex];
+    const isNewRound = remaining.length === 0;
+    const currentPool = isNewRound ? [...names] : remaining;
+    const eligiblePool =
+      isNewRound && latestWinner && currentPool.length > 1
+        ? currentPool.filter((name) => name !== latestWinner)
+        : currentPool;
+    const randomIndex = Math.floor(Math.random() * eligiblePool.length);
+    const winner = eligiblePool[randomIndex];
     const winnerIndex = names.indexOf(winner);
     if (winnerIndex < 0) return;
 
