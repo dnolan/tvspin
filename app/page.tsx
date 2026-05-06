@@ -109,7 +109,7 @@ export default function Home() {
 
           <section className="grid w-full gap-8 lg:grid-cols-[360px_1fr] lg:items-start">
             <div className="mx-auto flex w-full max-w-[360px] flex-col items-center gap-4">
-              <SpinWheel names={names} rotation={rotation} />
+              <SpinWheel names={names} rotation={rotation} onSpin={handleSpin} />
 
               {pendingSpinConfirm ? (
                 <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-center text-sm">

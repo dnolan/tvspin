@@ -3,6 +3,7 @@ import { useMemo } from "react";
 type Props = {
   names: string[];
   rotation: number;
+  onSpin?: () => void;
 };
 
 function getPalette(count: number): string[] {
@@ -14,7 +15,7 @@ function getPalette(count: number): string[] {
   });
 }
 
-export function SpinWheel({ names, rotation }: Props) {
+export function SpinWheel({ names, rotation, onSpin }: Props) {
   const segmentAngle = names.length > 0 ? 360 / names.length : 360;
   const colors = useMemo(() => getPalette(names.length), [names.length]);
 
@@ -55,7 +56,8 @@ export function SpinWheel({ names, rotation }: Props) {
       <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 border-l-[12px] border-r-[12px] border-t-[22px] border-l-transparent border-r-transparent border-t-red-500" />
 
       {/* spinning disc */}
-      <div
+      <div 
+        onClick={onSpin}
         className="absolute inset-0 overflow-hidden rounded-full transition-transform duration-[2400ms] ease-out"
         style={{
           transform: `rotate(${rotation}deg)`,
