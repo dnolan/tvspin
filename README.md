@@ -23,10 +23,13 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_TV_SPIN_DOC_ID=default
+NEXT_PUBLIC_TV_GAME_ID=default
 ```
 
-`NEXT_PUBLIC_TV_SPIN_DOC_ID` is optional and defaults to `default`.
+`NEXT_PUBLIC_TV_GAME_ID` identifies which shared "game" a deployment reads and writes — all signed-in
+users on the same game ID share one spin history and pool. It's optional and defaults to `default`.
+Give your test/preview deployment a different game ID than production (e.g. `test`) so the two never
+share state.
 
 In Firebase Console, enable authentication:
 
@@ -47,6 +50,6 @@ Open http://localhost:3000
 - Names are picked randomly from a **remaining pool**.
 - Once a person is picked, they are removed from the remaining pool.
 - When all names have been picked, the pool resets and a new round starts.
-- Spin history and remaining pool are persisted to Firebase Firestore per signed-in user at `users/{uid}/tvspin/{docId}`.
+- Spin history and remaining pool are persisted to Firebase Firestore in a shared document at `tvspin/{gameId}` (see `NEXT_PUBLIC_TV_GAME_ID`), so any signed-in user on the same game sees and updates the same session.
 
 This guarantees each name is selected exactly once per round before any repeats.

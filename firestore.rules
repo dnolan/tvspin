@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /tvspin/{gameId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Legacy per-user path from before shared "game" state. Kept readable/writable
+    // so existing prod history can be auto-migrated into the shared doc above on
+    // first load. Safe to remove once no client still references it.
+    match /users/{uid}/tvspin/{gameId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

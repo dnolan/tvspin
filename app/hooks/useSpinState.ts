@@ -26,7 +26,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function useSpinState(names: string[]) {
-  const firestoreDocId = process.env.NEXT_PUBLIC_TV_SPIN_DOC_ID || "default";
+  const gameId = process.env.NEXT_PUBLIC_TV_GAME_ID || "default";
 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(!hasFirebaseConfig || !auth);
@@ -35,8 +35,8 @@ export function useSpinState(names: string[]) {
 
   const spinDocRef = useMemo(() => {
     if (!db || !authUser) return null;
-    return doc(db, "users", authUser.uid, "tvspin", firestoreDocId);
-  }, [authUser, firestoreDocId]);
+    return doc(db, "tvspin", gameId);
+  }, [authUser, gameId]);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [remaining, setRemaining] = useState<string[]>([]);
@@ -107,9 +107,17 @@ export function useSpinState(names: string[]) {
     const loadState = async () => {
       try {
         const snapshot = await getDoc(spinDocRef);
-        const persisted = snapshot.exists()
-          ? (snapshot.data() as Partial<PersistedSpinState>)
-          : null;
+        let persisted = snapshot.exists() ? (snapshot.data() as Partial<PersistedSpinState>) : null;
+        let migratedFromLegacyDoc = false;
+
+        if (!persisted && db) {
+          const legacyDocRef = doc(db, "users", authUser.uid, "tvspin", gameId);
+          const legacySnapshot = await getDoc(legacyDocRef);
+          if (legacySnapshot.exists()) {
+            persisted = legacySnapshot.data() as Partial<PersistedSpinState>;
+            migratedFromLegacyDoc = true;
+          }
+        }
 
         const parsedHistory = Array.isArray(persisted?.history)
           ? persisted.history.filter(
@@ -128,11 +136,19 @@ export function useSpinState(names: string[]) {
         const validRemaining = parsedRemaining.filter((name) => nameSet.has(name));
 
         setHistory(parsedHistory);
-        setRemaining(validRemaining.length > 0 ? validRemaining : [...names]);
+        setRemaining(validRemaining);
         setLatestWinner(
           parsedHistory.length > 0 ? parsedHistory[parsedHistory.length - 1].name : null,
         );
         setFirebaseError(null);
+
+        if (migratedFromLegacyDoc) {
+          await setDoc(
+            spinDocRef,
+            { history: parsedHistory, remaining: validRemaining, updatedAt: new Date().toISOString() },
+            { merge: true },
+          );
+        }
       } catch {
         setFirebaseError("Unable to load spin state from Firestore.");
         setHistory([]);
@@ -144,7 +160,7 @@ export function useSpinState(names: string[]) {
     };
 
     void loadState();
-  }, [authReady, authUser, names, spinDocRef]);
+  }, [authReady, authUser, gameId, names, spinDocRef]);
 
   useEffect(() => {
     if (!isLoaded || !spinDocRef || !authUser || !hasUserMutated.current) return;
@@ -265,12 +281,17 @@ export function useSpinState(names: string[]) {
 
     hasUserMutated.current = true;
     setHistory(nextHistory);
-    setRemaining([...names]);
+    setRemaining([]);
     setLatestWinner(nextHistory.length > 0 ? nextHistory[nextHistory.length - 1].name : null);
     setIsSpinning(false);
+    if (spinTimerRef.current !== null) {
+      clearTimeout(spinTimerRef.current);
+      spinTimerRef.current = null;
+    }
   };
 
   return {
+    gameId,
     authUser,
     authReady,
     isAuthBusy,

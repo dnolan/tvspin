@@ -25,6 +25,7 @@ export default function Home() {
   const [pendingReset, setPendingReset] = useState<"history" | "round" | null>(null);
 
   const {
+    gameId,
     authUser,
     authReady,
     isAuthBusy,
@@ -92,6 +93,14 @@ export default function Home() {
             <section className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm">
               Configure <code>NEXT_PUBLIC_FIREBASE_*</code> env vars to persist spins in Firestore.
               Until then, data will only last for this page session.
+            </section>
+          ) : null}
+
+          {hasFirebaseConfig && gameId === "default" ? (
+            <section className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm">
+              This deployment is using the default game ID. Set <code>NEXT_PUBLIC_TV_GAME_ID</code>{" "}
+              to a distinct value per environment (e.g. <code>prod</code> / <code>test</code>) so
+              they don&apos;t share spin state.
             </section>
           ) : null}
 
