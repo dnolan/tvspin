@@ -5,6 +5,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // Shared watch log (tvspin/{gameId}/watches/{YYYY-MM-DD}) and show catalogue
+    // (tvspin/{gameId}/shows/{showId}).
+    match /tvspin/{gameId}/{sub=**} {
+      allow read, write: if request.auth != null;
+    }
+
     // Legacy per-user path from before shared "game" state. Kept readable/writable
     // so existing prod history can be auto-migrated into the shared doc above on
     // first load. Safe to remove once no client still references it.

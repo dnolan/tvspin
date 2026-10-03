@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider, hasFirebaseConfig } from "@/lib/firebase";
+import { getErrorMessage } from "@/lib/errors";
 
 export type SpinResult = {
   name: string;
@@ -15,15 +16,6 @@ type PersistedSpinState = {
 };
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
-
-function getErrorMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null) {
-    const code = "code" in error ? String(error.code) : null;
-    const message = "message" in error ? String(error.message) : "Unknown Firebase error";
-    return code ? `${code}: ${message}` : message;
-  }
-  return String(error);
-}
 
 export function useSpinState(names: string[]) {
   const gameId = process.env.NEXT_PUBLIC_TV_GAME_ID || "default";

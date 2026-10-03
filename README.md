@@ -53,3 +53,22 @@ Open http://localhost:3000
 - Spin history and remaining pool are persisted to Firebase Firestore in a shared document at `tvspin/{gameId}` (see `NEXT_PUBLIC_TV_GAME_ID`), so any signed-in user on the same game sees and updates the same session.
 
 This guarantees each name is selected exactly once per round before any repeats.
+
+## Watch log
+
+Signed-in users can log what was watched each day (as many entries per day as needed), with an
+optional season and episode. The show field type-aheads against shows already logged; new titles are added automatically.
+The "picked by" field defaults to that day's spin winner. Every configured name gets a 1–5 star rating
+on each entry, and anyone signed in can set or clear any of them (click the selected star again to
+clear).
+
+Data lives in subcollections of the shared game doc:
+
+- `tvspin/{gameId}/watches/{watchId}` — date, show, season/episode, chooser, and a `ratings` map
+- `tvspin/{gameId}/shows/{showId}` — the type-ahead catalogue
+
+These need the subcollection rule in `firestore.rules`, so redeploy rules after updating:
+
+```bash
+firebase deploy --only firestore:rules
+```

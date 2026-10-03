@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase";
+import { toDateKey } from "@/lib/dates";
 import { AllotmentTracker } from "@/app/components/AllotmentTracker";
 import { AuthHeader } from "@/app/components/AuthHeader";
 import { SpinHistory } from "@/app/components/SpinHistory";
 import { SpinWheel } from "@/app/components/SpinWheel";
-import { useSpinState } from "@/app/hooks/useSpinState";
+import { WatchLog, type WatchDraft } from "@/app/components/WatchLog";
+import { useSpinState, type SpinResult } from "@/app/hooks/useSpinState";
+import { useWatchLog } from "@/app/hooks/useWatchLog";
 
 function parseNames(raw: string | undefined): string[] {
   if (!raw) return [];
@@ -46,6 +49,21 @@ export default function Home() {
     resetHistory,
     resetCurrentRound,
   } = useSpinState(names);
+
+  const watchLog = useWatchLog(authUser, gameId);
+  const [watchDraft, setWatchDraft] = useState<WatchDraft | null>(null);
+  const watchLogRef = useRef<HTMLDivElement>(null);
+  const latestSpin = history.length > 0 ? history[history.length - 1] : null;
+
+  const openWatchDraft = (draft: Omit<WatchDraft, "key">) => {
+    setWatchDraft({ ...draft, key: Date.now() });
+    requestAnimationFrame(() =>
+      watchLogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  };
+
+  const logWatchForSpin = (entry: SpinResult) =>
+    openWatchDraft({ date: toDateKey(new Date(entry.spunAt)), chooser: entry.name });
 
   const handleSpin = () => {
     if (hasSpunToday && !pendingSpinConfirm) {
@@ -113,6 +131,12 @@ export default function Home() {
           {firebaseError ? (
             <section className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm">
               {firebaseError}
+            </section>
+          ) : null}
+
+          {watchLog.error ? (
+            <section className="w-full rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm">
+              {watchLog.error}
             </section>
           ) : null}
 
@@ -212,6 +236,15 @@ export default function Home() {
                     {isSpinning ? "Spinning..." : latestWinner ?? "Press spin"}
                   </p>
                 )}
+                {authUser && isLoaded && watchLog.isLoaded && !isSpinning && latestSpin ? (
+                  <button
+                    type="button"
+                    onClick={() => logWatchForSpin(latestSpin)}
+                    className="mt-3 rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold"
+                  >
+                    + Log what was watched
+                  </button>
+                ) : null}
                 <p className="mt-2 text-sm opacity-75">
                   Remaining this round: {remaining.length === 0 ? names.length : remaining.length}
                 </p>
@@ -258,7 +291,34 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <SpinHistory history={history} />
+                  <SpinHistory
+                    history={history}
+                    onLogWatch={authUser && watchLog.isLoaded ? logWatchForSpin : undefined}
+                  />
+                  {authUser ? (
+                    watchLog.isLoaded ? (
+                      <div ref={watchLogRef} className="scroll-mt-4">
+                        <WatchLog
+                          names={names}
+                          history={history}
+                          watches={watchLog.watches}
+                          shows={watchLog.shows}
+                          canEdit={!!authUser}
+                          draft={watchDraft}
+                          onOpenDraft={openWatchDraft}
+                          onCloseDraft={() => setWatchDraft(null)}
+                          onSave={watchLog.saveWatch}
+                          onRate={watchLog.setRating}
+                          onDelete={watchLog.deleteWatch}
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                        <p className="text-sm uppercase tracking-wide opacity-70">Watch log</p>
+                        <div className="mt-3 h-24 animate-pulse rounded-lg border border-white/10 bg-white/5" />
+                      </div>
+                    )
+                  ) : null}
                   <AllotmentTracker names={names} nameToCount={nameToCount} />
                 </>
               )}

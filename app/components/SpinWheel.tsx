@@ -6,13 +6,25 @@ type Props = {
   onSpin?: () => void;
 };
 
+// Muted, earthy tones ordered so neighbouring segments contrast in hue and warmth.
+const PALETTE = [
+  "#5f7f9c", // dusty blue
+  "#c2a26e", // muted ochre
+  "#7f9a82", // sage
+  "#b07c6f", // terracotta
+  "#857aa0", // lavender grey
+  "#6a9a96", // muted teal
+  "#bf8f8a", // dusty rose
+  "#9c9a72", // olive
+];
+
 function getPalette(count: number): string[] {
-  return Array.from({ length: count }, (_, index) => {
-    const hue = Math.round((index * 360) / Math.max(count, 1));
-    const saturation = index % 2 === 0 ? 78 : 70;
-    const lightness = index % 2 === 0 ? 54 : 46;
-    return `hsl(${hue} ${saturation}% ${lightness}%)`;
-  });
+  const colors = Array.from({ length: count }, (_, index) => PALETTE[index % PALETTE.length]);
+  // Avoid the last segment matching the first when the palette wraps.
+  if (count > 1 && colors[count - 1] === colors[0]) {
+    colors[count - 1] = PALETTE[Math.floor(PALETTE.length / 2)];
+  }
+  return colors;
 }
 
 export function SpinWheel({ names, rotation, onSpin }: Props) {
@@ -53,7 +65,7 @@ export function SpinWheel({ names, rotation, onSpin }: Props) {
   return (
     <div className="relative h-[320px] w-[320px]">
       {/* pointer */}
-      <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 border-l-[12px] border-r-[12px] border-t-[22px] border-l-transparent border-r-transparent border-t-red-500" />
+      <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 border-l-[12px] border-r-[12px] border-t-[22px] border-l-transparent border-r-transparent border-t-foreground" />
 
       {/* spinning disc */}
       <div 
@@ -69,7 +81,7 @@ export function SpinWheel({ names, rotation, onSpin }: Props) {
         {dividerAngles.map((angle) => (
           <span
             key={`divider-${angle}`}
-            className="absolute left-1/2 top-1/2 h-1/2 w-[2px] bg-white/90 shadow-[0_0_2px_rgba(0,0,0,0.35)]"
+            className="absolute left-1/2 top-1/2 h-1/2 w-[2px] bg-white/40"
             style={{
               transform: `translate(-50%, -100%) rotate(${angle}deg)`,
               transformOrigin: "center bottom",
