@@ -3,10 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import { hasFirebaseConfig } from "@/lib/firebase";
 import { toDateKey } from "@/lib/dates";
-import { AllotmentTracker } from "@/app/components/AllotmentTracker";
 import { AuthHeader } from "@/app/components/AuthHeader";
 import { SpinHistory } from "@/app/components/SpinHistory";
 import { SpinWheel } from "@/app/components/SpinWheel";
+import { RecentShows } from "@/app/components/RecentShows";
 import { WatchLog, type WatchDraft } from "@/app/components/WatchLog";
 import { useSpinState, type SpinResult } from "@/app/hooks/useSpinState";
 import { useWatchLog } from "@/app/hooks/useWatchLog";
@@ -41,7 +41,6 @@ export default function Home() {
     latestWinner,
     firebaseError,
     saveState,
-    nameToCount,
     hasSpunToday,
     signIn,
     signOutUser,
@@ -262,37 +261,25 @@ export default function Home() {
                 ) : null}
               </div>
 
+              {authUser && watchLog.isLoaded ? <RecentShows watches={watchLog.watches} /> : null}
+
               {authUser && !isLoaded ? (
-                <>
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-sm uppercase tracking-wide opacity-70">Spin history</p>
-                    <div className="mt-3 space-y-2">
-                      {[1, 2, 3].map((n) => (
-                        <div
-                          key={n}
-                          className="h-9 animate-pulse rounded-lg border border-white/10 bg-white/5"
-                        />
-                      ))}
-                    </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <p className="text-sm uppercase tracking-wide opacity-70">Spin history</p>
+                  <div className="mt-3 space-y-2">
+                    {[1, 2, 3].map((n) => (
+                      <div
+                        key={n}
+                        className="h-9 animate-pulse rounded-lg border border-white/10 bg-white/5"
+                      />
+                    ))}
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-sm uppercase tracking-wide opacity-70">
-                      Equal allotment tracker
-                    </p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {names.map((name) => (
-                        <div
-                          key={name}
-                          className="h-10 animate-pulse rounded-lg border border-white/10 bg-white/5"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </>
+                </div>
               ) : (
                 <>
                   <SpinHistory
-                    history={history}
+                    // The new spin is recorded immediately; hide it until the wheel lands.
+                    history={isSpinning ? history.slice(0, -1) : history}
                     onLogWatch={authUser && watchLog.isLoaded ? logWatchForSpin : undefined}
                   />
                   {authUser ? (
@@ -319,7 +306,6 @@ export default function Home() {
                       </div>
                     )
                   ) : null}
-                  <AllotmentTracker names={names} nameToCount={nameToCount} />
                 </>
               )}
             </div>

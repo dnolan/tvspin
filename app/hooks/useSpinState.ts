@@ -41,15 +41,6 @@ export function useSpinState(names: string[]) {
   const hasUserMutated = useRef(false);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const nameToCount = useMemo(() => {
-    const countMap = new Map<string, number>();
-    for (const name of names) countMap.set(name, 0);
-    for (const result of history) {
-      countMap.set(result.name, (countMap.get(result.name) ?? 0) + 1);
-    }
-    return countMap;
-  }, [history, names]);
-
   const hasSpunToday = useMemo(() => {
     const today = new Date().toDateString();
     return history.some((entry) => new Date(entry.spunAt).toDateString() === today);
@@ -296,7 +287,6 @@ export function useSpinState(names: string[]) {
     latestWinner,
     firebaseError,
     saveState,
-    nameToCount,
     hasSpunToday,
     segmentAngle,
     signIn,
